@@ -1,0 +1,92 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+2 0 obj
+<< /Length 162 >>
+stream
+BT
+/F1 12 Tf
+72 720 Td
+14 TL
+(Northwind Q3 Report) Tj
+T*
+() Tj
+T*
+(Revenue for Q3 was 4.12 million euro,) Tj
+T*
+(an increase of 12 percent year on year.) Tj
+T*
+ET
+endstream
+endobj
+3 0 obj
+<< /Length 233 >>
+stream
+BT
+/F1 12 Tf
+72 720 Td
+14 TL
+(Risks) Tj
+T*
+() Tj
+T*
+(The principal risk is supplier concentration:) Tj
+T*
+(68 percent of fastener stock originates from a single) Tj
+T*
+(supplier in Osaka. A second source is being qualified.) Tj
+T*
+ET
+endstream
+endobj
+4 0 obj
+<< /Length 166 >>
+stream
+BT
+/F1 12 Tf
+72 720 Td
+14 TL
+(Outlook) Tj
+T*
+() Tj
+T*
+(Q4 revenue is forecast at 4.4 million euro.) Tj
+T*
+(Headcount is expected to remain flat at 34 staff.) Tj
+T*
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 8 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R >> >> /Contents 2 0 R >>
+endobj
+6 0 obj
+<< /Type /Page /Parent 8 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R >> >> /Contents 3 0 R >>
+endobj
+7 0 obj
+<< /Type /Page /Parent 8 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R >> >> /Contents 4 0 R >>
+endobj
+8 0 obj
+<< /Type /Pages /Count 3 /Kids [5 0 R 6 0 R 7 0 R] >>
+endobj
+9 0 obj
+<< /Type /Catalog /Pages 8 0 R >>
+endobj
+xref
+0 10
+0000000000 65535 f 
+0000000009 00000 n 
+0000000079 00000 n 
+0000000292 00000 n 
+0000000576 00000 n 
+0000000793 00000 n 
+0000000919 00000 n 
+0000001045 00000 n 
+0000001171 00000 n 
+0000001240 00000 n 
+trailer
+<< /Size 10 /Root 9 0 R >>
+startxref
+1289
+%%EOF

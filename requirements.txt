@@ -1,0 +1,13 @@
+# Private Local AI — pinned, all pure-python or prebuilt arm64 wheels.
+# No network access is required by any of these at runtime.
+fastapi==0.141.1
+uvicorn[standard]==0.52.4
+python-multipart==0.0.32
+httpx==0.28.1
+numpy==2.5.2
+pypdf==6.16.2
+# Local neural text-to-speech (GPL-3.0). Optional: the app falls back
+# to macOS `say` if it is missing.
+piper-tts==1.7.0
+
+pytest==9.0.1

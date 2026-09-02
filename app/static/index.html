@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="dark light">
+<title>Private Local AI</title>
+<link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<div class="app" id="app" data-view="chat">
+
+  <!-- ═══════════════════════════ rail ═══════════════════════════ -->
+  <aside class="rail" id="rail">
+    <header class="brand">
+      <canvas class="brand-core" id="brandCore" width="72" height="72" aria-hidden="true"></canvas>
+      <div class="brand-text">
+        <strong>Private&nbsp;Local&nbsp;AI</strong>
+        <span class="brand-sub" id="brandSub">initialising</span>
+      </div>
+    </header>
+
+    <nav class="nav" role="tablist" aria-label="Sections">
+      <button class="nav-item active" data-view="chat" role="tab">
+        <span class="nav-key">1</span><span>Chat</span>
+      </button>
+      <button class="nav-item" data-view="documents" role="tab">
+        <span class="nav-key">2</span><span>Documents</span>
+        <span class="nav-count" id="navDocCount"></span>
+      </button>
+      <button class="nav-item" data-view="code" role="tab">
+        <span class="nav-key">3</span><span>Build</span>
+      </button>
+      <button class="nav-item" data-view="automate" role="tab">
+        <span class="nav-key">4</span><span>Automate</span>
+        <span class="nav-count" id="autonomyBadge"></span>
+      </button>
+      <button class="nav-item" data-view="connect" role="tab">
+        <span class="nav-key">5</span><span>Connect</span>
+        <span class="nav-count" id="connectBadge"></span>
+      </button>
+      <button class="nav-item" data-view="watch" role="tab">
+        <span class="nav-key">6</span><span>Watch</span>
+        <span class="nav-count" id="watchBadge"></span>
+      </button>
+      <button class="nav-item" data-view="voice" role="tab">
+        <span class="nav-key">7</span><span>Voice</span>
+        <span class="nav-count" id="voiceBadge"></span>
+      </button>
+      <button class="nav-item" data-view="privacy" role="tab">
+        <span class="nav-key">8</span><span>Privacy</span>
+      </button>
+    </nav>
+
+    <section class="rail-block threads" id="threadsBlock">
+      <div class="rail-head">
+        <span>Threads</span>
+        <button class="ghost-btn" id="newChatBtn" title="New thread (⌘N)" aria-label="New thread">
+          <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="thread-list" id="threadList"></div>
+    </section>
+
+    <!-- live, measured machine state -->
+    <section class="vitals" id="vitals" aria-label="Machine status">
+      <div class="vitals-top">
+        <span class="beacon" id="beacon"><i></i></span>
+        <div class="vitals-claim">
+          <strong id="claimTitle">Local only</strong>
+          <span id="claimSub">no cloud API</span>
+        </div>
+      </div>
+      <dl class="gauges">
+        <div class="gauge"><dt>model</dt><dd id="gModel">—</dd></div>
+        <div class="gauge"><dt>resident</dt><dd id="gResident">—</dd></div>
+        <div class="gauge"><dt>context</dt><dd id="gCtx">—</dd></div>
+        <div class="gauge"><dt>speed</dt><dd id="gSpeed">—</dd></div>
+      </dl>
+      <div class="mem">
+        <div class="mem-bar"><i id="memFill"></i></div>
+        <span class="mem-label" id="memLabel">memory —</span>
+      </div>
+    </section>
+  </aside>
+
+  <!-- ═══════════════════════════ main ═══════════════════════════ -->
+  <main class="main">
+    <header class="topbar">
+      <button class="ghost-btn menu-btn" id="menuBtn" aria-label="Menu">
+        <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </button>
+      <h1 id="viewTitle">Chat</h1>
+      <div class="topbar-right">
+        <button class="cmd-hint" id="cmdBtn" title="Command palette">
+          <span>⌘</span><span>K</span>
+        </button>
+        <div class="persona-switch" id="personaSwitch" role="radiogroup"
+             aria-label="Assistant persona"></div>
+        <div class="mode-pill" id="modePill">
+          <span class="sr-only">Work mode</span>
+          <select id="modeSelect" aria-label="Work mode"></select>
+        </div>
+        <div class="model-pill" id="modelPill">
+          <span class="sr-only">Model</span>
+          <select id="modelSelect" aria-label="Model"></select>
+        </div>
+      </div>
+    </header>
+
+    <!-- ─────────────────────────── CHAT ─────────────────────────── -->
+    <section class="view active" id="view-chat">
+      <div class="messages" id="messages">
+        <div class="hero" id="chatEmpty">
+          <canvas class="hero-core" id="heroCore" width="360" height="360" aria-hidden="true"></canvas>
+          <h2>Everything here stays on this Mac.</h2>
+          <p>Prompts, replies and documents are processed by a model running on
+             your own hardware. Nothing is sent anywhere.</p>
+          <div class="chips" id="starterChips"></div>
+        </div>
+      </div>
+
+      <div class="composer-zone">
+        <div class="review" id="transcriptReview" hidden>
+          <div class="review-head">
+            <span class="review-tag">transcribed locally</span>
+            <span class="review-meta" id="trMeta"></span>
+          </div>
+          <textarea id="trText" rows="2" spellcheck="true"
+                    aria-label="Review transcript before sending"></textarea>
+          <div class="review-actions">
+            <button class="btn btn-accent" id="trUse">Use this text</button>
+            <button class="btn" id="trRetry">Record again</button>
+            <button class="btn btn-quiet" id="trDiscard">Discard</button>
+          </div>
+        </div>
+
+        <div class="composer" id="composer">
+          <button class="mic" id="micBtn" title="Hold to talk" aria-label="Hold to talk">
+            <canvas class="mic-wave" id="micWave" width="88" height="88" aria-hidden="true"></canvas>
+            <svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true">
+              <path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3z" fill="currentColor"/>
+              <path d="M19 11a1 1 0 1 0-2 0 5 5 0 0 1-10 0 1 1 0 1 0-2 0 7 7 0 0 0 6 6.92V21H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-3.08A7 7 0 0 0 19 11z" fill="currentColor"/>
+            </svg>
+          </button>
+
+          <div class="field">
+            <textarea id="input" rows="1" spellcheck="true"
+                      placeholder="Ask anything — it runs here"></textarea>
+            <div class="field-row">
+              <span class="route-chip" id="routeChip" hidden></span>
+              <span class="gen-state" id="genStatus"></span>
+              <!-- Context switches for the next message. Grouped into one quiet
+                   segmented control: three separate outlined pills read as form
+                   inputs and crowded the composer. -->
+              <div class="ctx-group" role="group" aria-label="Message context">
+                <button class="ctx" id="useDocsBtn" role="switch" aria-checked="false"
+                        title="Answer from your indexed documents">
+                  <svg viewBox="0 0 14 14" width="11" height="11" aria-hidden="true">
+                    <path d="M3 1.6h5l3 3v7.8H3z" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+                    <path d="M8 1.6v3h3" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+                  </svg>
+                  <span>Docs</span><i class="ctx-n" id="toggleCount"></i>
+                </button>
+                <button class="ctx" id="useWatchBtn" role="switch" aria-checked="false"
+                        title="Include what the watchers have found">
+                  <svg viewBox="0 0 14 14" width="11" height="11" aria-hidden="true">
+                    <path d="M1 7s2.2-3.6 6-3.6S13 7 13 7s-2.2 3.6-6 3.6S1 7 1 7z" fill="none" stroke="currentColor" stroke-width="1.2"/>
+                    <circle cx="7" cy="7" r="1.6" fill="currentColor"/>
+                  </svg>
+                  <span>Watch</span><i class="ctx-n" id="watchToggleCount"></i>
+                </button>
+                <button class="ctx ctx-mute" id="muteBtn" role="switch" aria-checked="false"
+                        title="Mute spoken replies">
+                  <span class="mute-ico" aria-hidden="true"></span>
+                  <span class="sr-only" id="muteLabel">Voice on</span>
+                </button>
+              </div>
+              <button class="speaking" id="speakingBtn" hidden
+                      title="Stop speaking">
+                <span class="eq"><i></i><i></i><i></i><i></i></span>
+                <span>speaking</span>
+              </button>
+            </div>
+          </div>
+
+          <button class="send" id="sendBtn" aria-label="Send">
+            <svg viewBox="0 0 20 20" width="17" height="17" aria-hidden="true"><path d="M3 10 17 3l-4 7 4 7z" fill="currentColor"/></svg>
+          </button>
+        </div>
+        <p class="composer-foot" id="micHint">Hold the microphone to record. Audio is transcribed on this Mac.</p>
+      </div>
+    </section>
+
+    <!-- ───────────────────────── DOCUMENTS ───────────────────────── -->
+    <section class="view" id="view-documents">
+      <div class="sheet">
+        <div class="banner">
+          <strong>You choose what is indexed.</strong>
+          This app never scans your Mac on its own. It refuses your home folder,
+          Desktop, Documents, Downloads, Library, mail stores, browser profiles
+          and cloud-sync folders even if you point it at them.
+        </div>
+
+        <section class="panel">
+          <h3>Add a folder</h3>
+          <p class="dim">Paste the full path of a specific project folder.</p>
+          <div class="inline">
+            <input type="text" id="folderPath" spellcheck="false"
+                   placeholder="/Users/you/Projects/notes">
+            <button class="btn" id="previewBtn">Preview</button>
+            <button class="btn btn-accent" id="indexBtn" disabled>Index</button>
+          </div>
+          <div id="previewOut" class="out"></div>
+          <div class="progress" id="indexProgress" hidden>
+            <div class="track"><i id="barFill"></i></div>
+            <span class="progress-text" id="progressText"></span>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h3>Upload files</h3>
+          <p class="dim">Markdown, TXT, PDF, DOCX and CSV. Copies live in the app's own data folder.</p>
+          <div class="inline">
+            <input type="file" id="fileInput" multiple
+                   accept=".md,.markdown,.txt,.text,.pdf,.docx,.csv">
+            <button class="btn btn-accent" id="uploadBtn">Upload &amp; index</button>
+          </div>
+          <div id="uploadOut" class="out"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h3>Indexed sources <span class="badge" id="srcCount">0</span></h3>
+            <div class="btn-row">
+              <button class="btn" id="reindexAllBtn">Re-index all</button>
+              <button class="btn btn-danger" id="clearDocsBtn">Delete index</button>
+            </div>
+          </div>
+          <div id="sourceList" class="sources"></div>
+        </section>
+
+        <section class="panel">
+          <h3>Test retrieval</h3>
+          <p class="dim">See exactly which passages would be cited, before asking the model.</p>
+          <div class="inline">
+            <input type="text" id="ragQuery" placeholder="e.g. what are the main risks?">
+            <button class="btn btn-accent" id="ragBtn">Search</button>
+          </div>
+          <div id="ragOut" class="out"></div>
+        </section>
+      </div>
+    </section>
+
+    <!-- ─────────────────────────── AUTOMATE ─────────────────────────── -->
+    <section class="view" id="view-automate">
+      <div class="sheet">
+        <div class="banner banner-danger">
+          <strong>Full Mac control is enabled.</strong>
+          The model has an unrestricted shell, AppleScript, and read/write access
+          to your whole disk. How much it may do without asking is the switch
+          below — and this app also reads documents you did not write, so keep
+          autonomy low while indexing untrusted files.
+        </div>
+
+        <section class="panel">
+          <div class="panel-head"><h3>Autonomy</h3></div>
+          <div class="levels" id="autonomyLevels"></div>
+          <p class="dim" id="autonomyHint"></p>
+        </section>
+
+        <section class="panel">
+          <h3>Give it a task</h3>
+          <p class="dim">It will use real tools on this Mac and report back.</p>
+          <div class="inline">
+            <input type="text" id="agentTask"
+                   placeholder="e.g. find the 5 biggest files in my Downloads folder">
+            <button class="btn btn-accent" id="agentRun">Run</button>
+            <button class="btn btn-danger" id="agentStop" hidden>Stop</button>
+          </div>
+          <div class="lanes-input" id="lanesInput" hidden>
+            <span class="dim">Atlas runs up to three at once:</span>
+            <input type="text" id="agentTask2" placeholder="Second task (optional)">
+            <input type="text" id="agentTask3" placeholder="Third task (optional)">
+          </div>
+          <div id="agentStream" class="agent-stream"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h3>Skills <span class="badge" id="skillCount">0</span></h3>
+            <button class="btn" id="skillNew">New skill</button>
+          </div>
+          <p class="dim">
+            Markdown files in your data folder. Instruction skills shape how it
+            works; command skills become tools it can run by name.
+          </p>
+          <div id="skillList" class="rows"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h3>What it has learned <span class="badge" id="memCount">0</span></h3>
+            <button class="toggle" id="learnToggle" role="switch" aria-checked="false">
+              <span class="toggle-dot"></span><span>Learning</span>
+            </button>
+          </div>
+          <p class="dim">
+            Facts picked up from your own messages, used to answer better later.
+            Document passages are never learned. Delete anything here at any time.
+          </p>
+          <div class="inline" style="margin-bottom:10px">
+            <input type="text" id="memInput" placeholder="Teach it something directly…">
+            <button class="btn" id="memAdd">Remember</button>
+            <button class="btn btn-danger" id="memClear">Forget all</button>
+          </div>
+          <div id="memList" class="rows"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head"><h3>Available tools <span class="badge" id="toolCount">0</span></h3></div>
+          <div id="toolList" class="rows"></div>
+        </section>
+      </div>
+    </section>
+
+
+    <!-- ─────────────────────────── BUILD ─────────────────────────── -->
+    <section class="view" id="view-code">
+      <div class="sheet">
+        <div class="banner">
+          <strong>Write code, then prove it works.</strong>
+          Point this at a project and describe the change. It reads the code,
+          edits it with precise patches, runs the project's own tests, reads the
+          failure, and tries again — up to the number of attempts you allow.
+          Iterating against a real error message is what makes a local model
+          finish work it could not write in one shot.
+        </div>
+
+        <section class="panel">
+          <div class="panel-head"><h3>Project</h3></div>
+          <div class="inline">
+            <input type="text" id="codePath" placeholder="~/Projects/my-app">
+            <button class="btn" id="codeScan">Scan</button>
+          </div>
+          <div id="codeSurvey" class="rows" style="margin-top:10px"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head"><h3>The change</h3></div>
+          <div class="form-field">
+            <textarea id="codeTask" placeholder="e.g. the CSV importer drops rows whose date column is empty — make it keep them with a null date, and add a test"></textarea>
+          </div>
+          <div class="form-row">
+            <div class="form-field">
+              <label for="codeRounds">Attempts before it stops</label>
+              <select id="codeRounds">
+                <option value="1">1 — write it once</option>
+                <option value="3" selected>3 — fix its own failures</option>
+                <option value="5">5 — keep going</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="codeVerify">Verification command</label>
+              <input type="text" id="codeVerify" placeholder="detected from the project">
+              <span class="hint">Blank uses whatever the scan found.</span>
+            </div>
+          </div>
+          <p class="dim" id="codeAutonomyNote"></p>
+          <div class="inline">
+            <button class="btn btn-accent" id="codeRun">Build it</button>
+            <button class="btn btn-danger" id="codeStop" hidden>Stop</button>
+          </div>
+          <div id="codeStream" class="build-stream"></div>
+        </section>
+      </div>
+    </section>
+
+    <!-- ────────────────────────── CONNECT ────────────────────────── -->
+    <section class="view" id="view-connect">
+      <div class="sheet">
+        <div class="banner">
+          <strong>Everything it can reach.</strong>
+          Grouped by where each connector actually goes. The first two groups are
+          software on this Mac and never touch a network. The third group is other
+          people's servers, and needs the switch below turned on before a single
+          request is made.
+        </div>
+
+        <div class="egress-switch off" id="egressSwitch">
+          <span class="dot" id="egressDot"></span>
+          <div class="body">
+            <strong>Reach the internet for watchers</strong>
+            <p id="egressBlurb">
+              Off. Nothing in this app makes an outbound request. The model,
+              your documents and your conversations stay local either way — this
+              switch only governs status polls to the services below.
+            </p>
+          </div>
+          <button class="toggle" id="egressToggle" role="switch" aria-checked="false">
+            <span class="toggle-dot"></span><span>Outbound</span>
+          </button>
+        </div>
+
+        <div id="egressLog" class="rows" hidden></div>
+        <div id="connectorList"><div class="skeleton"><i></i><i></i><i></i></div></div>
+      </div>
+    </section>
+
+    <!-- ─────────────────────────── WATCH ─────────────────────────── -->
+    <section class="view" id="view-watch">
+      <div class="sheet">
+        <div class="banner">
+          <strong>It keeps looking while you do not.</strong>
+          Each watch runs on its own schedule and only speaks up when something
+          changed — a new mail, a deployment that went red, a URL that stopped
+          answering. Mail is read from Mail.app on this Mac. Everything a watch
+          collects is treated as data to report, never as instructions to follow.
+        </div>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h3>Watches <span class="badge" id="watchCount">0</span></h3>
+            <div class="inline">
+              <button class="btn" id="watchNew">Add a watch</button>
+              <button class="btn" id="watchRunAll">Check now</button>
+            </div>
+          </div>
+          <p class="dim" id="watchStatus"></p>
+          <div id="watchList" class="watch-grid"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h3>What changed <span class="badge" id="eventCount">0</span></h3>
+            <button class="btn" id="eventsSeen">Mark all read</button>
+          </div>
+          <div id="eventFeed" class="feed"></div>
+        </section>
+      </div>
+    </section>
+
+    <!-- ─────────────────────────── VOICE ─────────────────────────── -->
+    <section class="view" id="view-voice">
+      <div class="sheet">
+        <div class="banner">
+          <strong>Give it a voice.</strong>
+          Record a sample and the assistant will speak in that voice. Synthesis
+          runs on this Mac's GPU and the audio never leaves it. Generated speech
+          carries an inaudible watermark marking it synthetic — clone your own
+          voice, or one you have permission to use.
+        </div>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h3>Speaking voice</h3>
+            <span class="badge" id="voiceEngine">—</span>
+          </div>
+          <div class="voice-picker" id="voicePicker"></div>
+          <div class="inline" style="margin-top:10px">
+            <input type="text" id="voiceTest" placeholder="Say something to test the voice…">
+            <button class="btn btn-accent" id="voiceTestBtn">Speak</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h3>Teach it a new voice</h3>
+          <p class="dim">
+            Hold record and read naturally for 10–20 seconds. Longer, calmer
+            samples clone better than short excited ones.
+          </p>
+          <div class="record-row">
+            <button class="rec-btn" id="voiceRecBtn" aria-label="Hold to record">
+              <canvas class="rec-wave" id="voiceWave" width="120" height="120" aria-hidden="true"></canvas>
+              <span class="rec-dot"></span>
+            </button>
+            <div class="record-meta">
+              <div class="rec-timer" id="voiceTimer">0.0s</div>
+              <div class="dim" id="voiceRecHint">Hold to record</div>
+            </div>
+            <input type="text" id="voiceName" placeholder="Name this voice">
+            <button class="btn btn-accent" id="voiceSave" disabled>Save voice</button>
+          </div>
+          <div class="import-row">
+            <span class="dim">…or import an existing recording</span>
+            <input type="file" id="voiceFile" accept="audio/*,.wav,.mp3,.m4a,.aiff">
+            <button class="btn" id="voiceImport">Import &amp; learn</button>
+          </div>
+          <div id="voiceOut" class="out"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head"><h3>Saved voices</h3></div>
+          <div id="voiceList" class="rows"></div>
+        </section>
+      </div>
+    </section>
+
+    <!-- ─────────────────────────── ACTIONS ─────────────────────────── -->
+    <section class="view" id="view-actions">
+      <div class="sheet">
+        <div class="banner banner-warn">
+          <strong>Four actions. Nothing else.</strong>
+          No shell, AppleScript, Mail, Keychain or general filesystem access.
+          Anything that opens, writes or changes something asks you first and
+          shows the exact parameters.
+        </div>
+        <div id="actionCatalog" class="action-grid"></div>
+
+        <section class="panel">
+          <h3>Reminder drafts</h3>
+          <p class="dim">Stored in this app's own database. Reminders.app is never touched.</p>
+          <div id="reminderList" class="rows"></div>
+        </section>
+
+        <section class="panel">
+          <h3>Audit log</h3>
+          <p class="dim">Every proposal, approval and denial.</p>
+          <div id="actionLog" class="rows"></div>
+        </section>
+      </div>
+    </section>
+
+    <!-- ─────────────────────────── PRIVACY ─────────────────────────── -->
+    <section class="view" id="view-privacy">
+      <div class="sheet">
+        <section class="panel">
+          <h3>What this app does and does not do</h3>
+          <ul class="checks" id="guaranteeList"></ul>
+        </section>
+        <section class="panel">
+          <h3>Local data folder</h3>
+          <p class="mono dim" id="dataDir"></p>
+          <p class="dim" id="dataSummary"></p>
+          <div id="dataFiles" class="rows"></div>
+        </section>
+        <section class="panel panel-danger">
+          <h3>Delete all local data</h3>
+          <p>Removes every thread, message, indexed document, embedding, reminder
+             draft and audit entry, plus uploaded copies. This cannot be undone.</p>
+          <p class="dim">Downloaded model weights are kept — the README explains how to remove those.</p>
+          <button class="btn btn-danger" id="wipeBtn">Delete all local data…</button>
+        </section>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- command palette -->
+<div class="palette-backdrop" id="paletteBackdrop" hidden>
+  <div class="palette" role="dialog" aria-modal="true" aria-label="Command palette">
+    <input type="text" id="paletteInput" placeholder="Type a command…"
+           spellcheck="false" autocomplete="off">
+    <div class="palette-list" id="paletteList"></div>
+    <div class="palette-foot">
+      <span><kbd>↑</kbd><kbd>↓</kbd> navigate</span>
+      <span><kbd>↵</kbd> run</span>
+      <span><kbd>esc</kbd> close</span>
+    </div>
+  </div>
+</div>
+
+<!-- approval / confirmation dialog -->
+<div class="modal-backdrop" id="modalBackdrop" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <h3 id="modalTitle">Approve this action?</h3>
+    <div id="modalBody"></div>
+    <div class="modal-actions" id="modalActions"></div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

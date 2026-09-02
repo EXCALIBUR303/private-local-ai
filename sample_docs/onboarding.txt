@@ -1,0 +1,10 @@
+Northwind onboarding checklist.
+
+Day one: collect the laptop from IT, sign the equipment form, and set up
+two-factor authentication on the internal portal.
+
+Day two: shadow a support engineer for a full shift. Read the returns policy
+before taking any customer contact.
+
+Day five: complete the warehouse safety module. The pass mark is 80 percent.
+Anyone who does not pass repeats the module within two weeks.
